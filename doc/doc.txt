@@ -1,0 +1,11 @@
+INPUT DIRECTORY STRUCTURE
+-input_directory/
+    -templates/
+        -index.*.spybgt
+        -article.*.spybgt
+    -articles/
+        -article_title
+            [-custom_article_template.*.spybgt]
+            -*.content.md
+            [-img/]
+                -... (images used in content)
