@@ -1,0 +1,4 @@
+<p>
+<h1>%article.title% - %article.data%</h1>
+%article.short%
+</p>

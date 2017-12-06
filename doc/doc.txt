@@ -3,6 +3,7 @@ INPUT DIRECTORY STRUCTURE
     -templates/
         -index.*.spybgt
         -article.*.spybgt
+        -article_short.*.spybgt
     -articles/
         -article_title
             [-custom_article_template.*.spybgt]
