@@ -66,8 +66,11 @@ class Spybg:
 
 
 def main():
-    spybg = Spybg()
-    spybg.generate()
+    try:
+        spybg = Spybg()
+        spybg.generate()
+    except Exception as exception:
+        print(exception)
 
 
 if __name__ == "__main__":
