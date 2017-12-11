@@ -1,6 +1,35 @@
 import glob
 import ntpath
 import sys
+import subprocess
+
+
+class Utils:
+    @staticmethod
+    def to_string(value):
+        if isinstance(value, bytes):
+            return value.decode("utf-8")
+        if isinstance(value, str):
+            return value
+
+
+class Markdown2:
+    @staticmethod
+    def _get_command(md_path):
+        return [
+            "python3",
+            "-m",
+            "markdown2",
+            "--extras",
+            "fenced-code-blocks",
+            md_path
+        ]
+
+    @staticmethod
+    def generate(md_path):
+        command = Markdown2._get_command(md_path)
+        result = subprocess.run(command, stdout=subprocess.PIPE)
+        return Utils.to_string(result.stdout)
 
 
 class Configs:
