@@ -1,7 +1,9 @@
 import glob
 import ntpath
+import os
 import sys
 import subprocess
+from markdown2 import Markdown
 
 
 class Utils:
@@ -12,12 +14,20 @@ class Utils:
         if isinstance(value, str):
             return value
 
+    @staticmethod
+    def create_file_with_dirs(path, mode='w'):
+        dir_path = os.path.split(path)[0]
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
+        return open(path, mode)
+
 
 class Markdown2:
     @staticmethod
     def _get_command(md_path):
         return [
-            "python3",
+            "python",
             "-m",
             "markdown2",
             "--extras",
@@ -45,6 +55,9 @@ class Configs:
 
     def output_index(self, index_name):
         return "{}/{}".format(self.output_dir, index_name)
+
+    def output_article_path(self, art_name):
+        return "{}/arts/{}".format(self.output_dir, art_name)
 
     def articles(self):
         return "{}/{}/".format(self.input_dir, self.articles_dir)
@@ -78,18 +91,38 @@ class Templates:
     def load_article_short_template(self):
         return self._load_template(self.article_short_path)
 
+    def load_article_template(self):
+        return self._load_template(self.article_path)
 
-class ArticlesMetadata:
-    def __init__(self):
+    def article_extension(self):
+        return os.path.splitext(os.path.splitext(self.article_path)[0])[1]
+
+
+class ArticleInfo:
+    def __init__(self, art_path):
         self.title = ''
         self.date = ''
         self.short = ''
+        self.content = ''
+        self.filename = os.path.splitext(os.path.basename(art_path))[0]
+
+        with open(art_path, 'r') as file:
+            article = file.read()
+            self.extract_from_article(article)
+
+    @staticmethod
+    def get_raw_metadata_pos_info(article):
+        return [article.find('{'), article.find('}')]
 
     @staticmethod
     def _extract_raw_metadata(article):
-        start_pos = article.find('{')
-        end_pos = article.find('}')
-        return article[start_pos + 1: end_pos]
+        pos_info = ArticleInfo.get_raw_metadata_pos_info(article)
+        return article[pos_info[0] + 1: pos_info[1]]
+
+    @staticmethod
+    def _extract_content(article):
+        pos_info = ArticleInfo.get_raw_metadata_pos_info(article)
+        return article[pos_info[1] + 1:]
 
     @staticmethod
     def _parse_raw(raw_data):
@@ -107,6 +140,7 @@ class ArticlesMetadata:
         self.title = parsed['title']
         self.date = parsed['date']
         self.short = parsed['short']
+        self.content = self._extract_content(article)
 
 
 class ArticlesGenerator:
@@ -117,15 +151,11 @@ class ArticlesGenerator:
     def _generate_article_list_entry(self, article_path):
         template = self.templates.load_article_short_template()
 
-        with open(article_path, 'r') as file:
-            article = file.read()
+        art_info = ArticleInfo(article_path)
 
-        metadata = ArticlesMetadata()
-        metadata.extract_from_article(article)
-
-        return template.replace('%article.title%', metadata.title) \
-            .replace('%article.data%', metadata.date) \
-            .replace('%article.short%', metadata.short)
+        return template.replace('%article.title%', art_info.title) \
+            .replace('%article.data%', art_info.date) \
+            .replace('%article.short%', art_info.short)
 
     def generate_articles_list(self):
         articles_paths = glob.glob(self.configs.articles() + '*')
@@ -135,6 +165,37 @@ class ArticlesGenerator:
             articles_list += self._generate_article_list_entry(article_path)
 
         return articles_list
+
+    @staticmethod
+    def _remove_article_metadata(article):
+        metadata_pos_info = ArticleInfo.get_raw_metadata_pos_info(article)
+        return article[metadata_pos_info[1]:]
+
+    def _generate_article(self, article_path):
+        template = self.templates.load_article_template()
+
+        art_info = ArticleInfo(article_path)
+
+        article_content = Markdown().convert(art_info.content)
+        generated_article_path = self._get_generated_article_path(article_path)
+
+        generated_article =  template.replace('%article.title%', art_info.title) \
+            .replace('%article.date%', art_info.date) \
+            .replace('%article.content%', article_content)
+
+        with Utils.create_file_with_dirs(generated_article_path) as file:
+            file.write(generated_article)
+
+    def _get_generated_article_path(self, article_path):
+        info = ArticleInfo(article_path)
+        article_filename = info.filename + self.templates.article_extension()
+        return self.configs.output_article_path(article_filename)
+
+    def generate_articles(self):
+        articles_paths = glob.glob(self.configs.articles() + '*')
+
+        for article_path in articles_paths:
+            self._generate_article(article_path)
 
 
 class Spybg:
@@ -152,6 +213,8 @@ class Spybg:
 
         with open(self.configs.output_index(self.templates.output_index_name()), 'w+') as file:
             file.write(generated_index)
+
+        self.articles_generator.generate_articles()
 
 
 def main():
