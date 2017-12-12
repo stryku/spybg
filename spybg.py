@@ -2,7 +2,7 @@ import glob
 import ntpath
 import os
 import sys
-from markdown2 import Markdown
+import markdown2
 
 
 class Utils:
@@ -156,7 +156,7 @@ class ArticlesGenerator:
 
         art_info = ArticleInfo(article_path)
 
-        article_content = Markdown().convert(art_info.content)
+        article_content = markdown2.markdown(art_info.content, extras=["fenced-code-blocks"])
         generated_article_path = self._get_generated_article_path(article_path)
 
         generated_article =  template.replace('%article.title%', art_info.title) \
