@@ -2,7 +2,6 @@ import glob
 import ntpath
 import os
 import sys
-import subprocess
 from markdown2 import Markdown
 
 
@@ -21,25 +20,6 @@ class Utils:
             os.makedirs(dir_path)
 
         return open(path, mode)
-
-
-class Markdown2:
-    @staticmethod
-    def _get_command(md_path):
-        return [
-            "python",
-            "-m",
-            "markdown2",
-            "--extras",
-            "fenced-code-blocks",
-            md_path
-        ]
-
-    @staticmethod
-    def generate(md_path):
-        command = Markdown2._get_command(md_path)
-        result = subprocess.run(command, stdout=subprocess.PIPE)
-        return Utils.to_string(result.stdout)
 
 
 class Configs:
