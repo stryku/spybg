@@ -194,9 +194,6 @@ class Spybg:
         with open(self.configs.output_index(self.templates.output_index_name()), 'w+') as file:
             file.write(generated_index)
 
-        self.articles_generator.generate_articles()
-
-
 def main():
     #try:
         spybg = Spybg()
